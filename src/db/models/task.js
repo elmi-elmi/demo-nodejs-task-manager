@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 
-const Task = mongoose.model('task',{
+const Task = mongoose.model('Task',{
     description:{
         require:true,
         type:String,
@@ -10,6 +10,11 @@ const Task = mongoose.model('task',{
     completed:{
         type:Boolean,
         default:false
+    },
+    owner:{
+        type: mongoose.Schema.Types.ObjectId,
+        required:true,
+        ref:'User'
     }
 })
 

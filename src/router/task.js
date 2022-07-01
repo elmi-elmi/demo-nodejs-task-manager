@@ -1,11 +1,15 @@
 const express = require('express');
 const Task = require("../db/models/task");
+const auth = require('../middelware/auth');
 const router = new express.Router();
 
 
 
-router.post('/tasks', async (req, res) => {
-    const task = new Task(req.body);
+router.post('/tasks',auth, async (req, res) => {
+    // const task = new Task(req.body);
+    const task = new Task({
+        ...req.body, owner:req.user._id
+    })
     try {
         await task.save();
         res.status(201).send(task)
@@ -19,10 +23,11 @@ router.post('/tasks', async (req, res) => {
 
 
 
-router.get('/tasks', async (req, res) => {
+router.get('/tasks',auth, async (req, res) => {
     try {
-        const tasks = await Task.find({})
-        res.status(200).send(tasks)
+        // const tasks = await Task.find({})
+        await req.user.populate('tasks')
+        res.status(200).send(req.user.tasks)
     } catch (e) {
         res.status(500).send(e)
     }
@@ -40,7 +45,7 @@ router.get('/tasks/:id', async (req, res) => {
 
 
 
-router.patch('/tasks/:id', async (req, res) => {
+router.patch('/tasks/:id',auth, async (req, res) => {
     const updates = ['description', 'completed']
     const keys = Object.keys(req.body);
     const isValidUpdate = keys.every(key => updates.includes(key))
@@ -48,12 +53,16 @@ router.patch('/tasks/:id', async (req, res) => {
     if (!isValidUpdate) return res.status(400).send({error: 'Invalid Update'})
 
     try {
-        const task = await Task.findByIdAndUpdate(req.params.id, req.body, {new: true, runValidators: true});
+
+        const task = await Task.findOne({_id:req.params.id, owner:req.user._id})
         if(!task) return res.status(4040).res({error: 'the task not found'})
+        updates.forEach(update=>task[update] =  req.body[update])
+        await task.save()
         res.status(200).send(task)
 
 
     }catch (e) {
+        console.log('eeee',e)
         res.status(400).send(e)
     }
 })
