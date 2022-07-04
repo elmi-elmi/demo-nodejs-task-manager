@@ -38,6 +38,8 @@ const userSchema = new mongoose.Schema({
     tokens:[{
         token:{required:true, type:String}
     }]
+},{
+    timestamps:true
 })
 
 userSchema.virtual('tasks',{
@@ -81,7 +83,6 @@ userSchema.methods.generateAuthToken = async function(){
 }
 userSchema.pre('save',async function(next){
     const user = this;
-
     if(user.isModified('password')){
         user.password = await bcrypt.hash(user.password,8)
     }
@@ -90,8 +91,8 @@ userSchema.pre('save',async function(next){
 })
 
 userSchema.pre('remove',async function(next){
-    const user = this;
 
+    const user = this;
     await Task.deleteMany({owner:user._id})
     next()
 })
